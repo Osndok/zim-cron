@@ -108,6 +108,8 @@ fi
 
 git merge -m "$MSG" $BRANCHES || ( git add -A . && git commit -m "$MSG" )
 
+done
+
 # Here, we are waiting on the 'rm -rf' command, at the very top of the script.
 wait
 
