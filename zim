@@ -1,0 +1,173 @@
+#!/bin/bash
+#
+# Select which zim to run... favoring the latest, local project.
+# ...and run the 'prelaunch' script too, while we are at it.
+#
+# WARNING: still geared for python2 (zim v0.69).
+#
+
+LOCAL=$HOME/Projects/zim-desktop-wiki
+STOCK=/usr/bin/zim
+
+MYDIR=$(dirname $0)
+PRELAUNCH=$MYDIR/zim-prelaunch.sh
+
+LOG="$HOME/.local/zim.calls"
+
+# Unusual, but soft, dependencies...
+which gxmessage   2> /dev/null || alias gxmessage=echo
+which pom-notable 2> /dev/null || alias pom-notable=echo
+
+# BEFORE WE DO ANYTHING... in case we... or zim... or python... or the distro... or the kernel
+# MESS SOMETHING UP, let us make sure we AT LEAST preserve WHAT WAS GOING TO BE LOGGED into zim!
+echo -e "$(date +%s)\tzim $*" >> $LOG
+
+# If we prioritize ourself, then our children will run at the higher nice level too.
+# But if sudo blocks for input, on the gui... then we are stuck.
+#sudo renice -n -15 -p $$
+
+# KDE-only? https://github.com/zim-desktop-wiki/zim-desktop-wiki/issues/580
+export LC_ALL=C
+
+# NB: duplicated in ~/etc/cron.*/zim-commit.sh
+function zim_is_running()
+{
+	ZIM_PROCESS=$(pgrep -f /usr/bin/zim)
+	if [ -z "$ZIM_PROCESS" ]
+	then
+		ZIM_PROCESS=$(pgrep -f wiki/zim.py)
+		test -n "$ZIM_PROCESS"
+	fi
+}
+
+SOCKET=$(find /tmp/zim-$USER -type s)
+
+# If there are no arguments given, then assume it is a GUI launch
+# so merge any stray branches and inject a "--debug" argument.
+if [ $# -eq 0 ]
+then
+
+	# If we are launching the gui, make sure there are no other guis running.
+	# NB: This is done *before* prelaunch b/c prelaunch will utterly destroy the running zim's /tmp/zim-$USER directory.
+	# NB: But by some logic, this should be done *after* prelaunch merge b/c git has its own locking & b/c it lets us be a bit sloppy (no lock file).
+	if zim_is_running
+	then
+		gxmessage -print -title Error 'Zim seems to be running already (might pop up in just a minute).'
+		exit 1
+	fi
+
+	if [ -n "$SOCKET" ]
+	then
+		#gxmessage -print -title Error 'Zim socket is present, but not running?'
+		#exit 1
+		rm -fv "$SOCKET"
+	fi
+
+	# NB: The pre-launch merge usually brings in a 'flip-flop-change'... so it must be done before claiming that mutex.
+	if [ -x "$PRELAUNCH" ]
+	then
+		$PRELAUNCH
+	fi
+
+	set -- --debug
+fi
+
+#echo "$$" > /tmp/zim.pid.$$
+
+if [ -n "$SOCKET" ]
+then
+	# Make sure we don't lose the socket
+	if [ -d "$LOCAL" ]
+	then
+		#echo 1>&2 "using $LOCAL"
+		export PYTHONOPTIMIZE=2
+		export PYTHONPATH="$LOCAL"
+		$LOCAL/zim.py "$@"
+	else
+		echo 1>&2 "WARNING: using $STOCK"
+		"$STOCK" "$@"
+	fi
+
+	SOCKET2=$(find /tmp/zim-$USER -type s)
+	if [ -z "$SOCKET2" ]
+	then
+		if [ -z "$SOCKET" ]
+		then
+			echo 1>&2 "NOTICE: still don't have a socket... okay..."
+		else
+			echo 1>&2 "WARNING: socket vanished: $SOCKET"
+			pom-notable "[[:Zim:Socket:Vanish]]"
+			# YES... this is *VERY* aggressive, but I often find that in this state a normal TERM does not suffice,
+			# AND... 'zim' is called very frequently, so I don't want to TERM, sleep, KILL...
+			# FURTHER... it is almost SURELY *THIS*CALL* (that we just made above) that eradicated the socket, so this
+			# is "failing fast".
+			pkill -9 zim.py       || echo "no zim.py to kill"
+			pkill -9 /usr/bin/zim || echo "no /usr/bin/zim to kill"
+			# It is expected that the user will manually restart zim.
+		fi
+	fi
+else
+	# We should not have zim running w/o a socket... but can we tell the difference between the server & client processes?
+	# If we leave it running, then we will have a bunch of ugly race conditions.
+	if zim_is_running
+	then
+		echo 1>&2 "WARNING: socket vanished: $SOCKET"
+		pom-notable "[[:Zim:Socket:Vanish]]"
+		pgrep -f 'zim.py --debug' | xargs kill -9 || echo "could not kill -9 zim server?"
+	fi
+
+	# Don't keep an extra shell around
+	if [ -d "$LOCAL" ]
+	then
+		#echo 1>&2 "using $LOCAL"
+		export PYTHONOPTIMIZE=2
+		export PYTHONPATH="$LOCAL"
+		# Pardon the no-op slide... :-/
+		#########################################################################################################################
+		#########################################################################################################################
+		#########################################################################################################################
+		#########################################################################################################################
+		#########################################################################################################################
+		#########################################################################################################################
+		#########################################################################################################################
+		#########################################################################################################################
+		exec $LOCAL/zim.py "$@"
+		#########################################################################################################################
+		#########################################################################################################################
+		#########################################################################################################################
+		#########################################################################################################################
+		#########################################################################################################################
+		#########################################################################################################################
+		#########################################################################################################################
+		#########################################################################################################################
+	else
+		echo 1>&2 "WARNING: using $STOCK"
+		# Pardon the no-op slide... :-/
+		#########################################################################################################################
+		#########################################################################################################################
+		#########################################################################################################################
+		#########################################################################################################################
+		#########################################################################################################################
+		#########################################################################################################################
+		#########################################################################################################################
+		#########################################################################################################################
+		exec "$STOCK" "$@"
+		#########################################################################################################################
+		#########################################################################################################################
+		#########################################################################################################################
+		#########################################################################################################################
+		#########################################################################################################################
+		#########################################################################################################################
+		#########################################################################################################################
+		#########################################################################################################################
+	fi
+
+	SOCKET2=$(find /tmp/zim-$USER -type s)
+	if [ -n "$SOCKET2" ]
+	then
+		pom-notable "~/bin/zim: launching non-gui zim left a socket active?"
+	fi
+fi
+
+
+
