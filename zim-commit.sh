@@ -19,6 +19,8 @@ NOTEBOOKS=$HOME/Notebooks
 
 test -d $NOTEBOOKS || exit 1
 
+which online 2>/dev/null 1>&2 || alias online=true
+
 # Called if/when stuff really gets messed up, and you need to know about it.
 # You will probably have to replace this with something else.
 function panic()
