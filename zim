@@ -9,7 +9,7 @@
 LOCAL=$HOME/Projects/zim-desktop-wiki
 STOCK=/usr/bin/zim
 
-MYDIR=$(dirname $0)
+MYDIR=$(dirname $(realpath $0))
 PRELAUNCH=$MYDIR/zim-prelaunch.sh
 
 LOG="$HOME/.local/zim.calls"
@@ -67,6 +67,8 @@ then
 	if [ -x "$PRELAUNCH" ]
 	then
 		$PRELAUNCH
+	else
+		echo 1>&2 "$PRELAUNCH: dne"
 	fi
 
 	set -- --debug
