@@ -36,7 +36,7 @@ cd $NOTEBOOK
 
 test -d .git || git init
 
-echo $(basename $NOTEBOOK)
+echo "NOTEBOOK=$(basename $NOTEBOOK)"
 
 # Through paranoia, I was hoping to avoid a case where the script blocks in the background waiting
 # for a password (when there is no user). Although... I have never actually seen this happen.
@@ -253,7 +253,11 @@ function conglomerate_state()
 
 function fetched_something_new()
 {
-	online || return 1
+	if ! online
+	then
+		echo "network is not online, so not fetching remotes"
+		return 1
+	fi
 
 	git remote | while read UPSTREAM
 	do
@@ -273,12 +277,12 @@ function fast_forward_where_possible()
 {
 	for BRANCH in $BRANCHES
 	do
-		git merge --ff-only $BRANCH || echo "Not fast-forwarding: $BRANCH"
+		git merge --ff-only $BRANCH || echo "Can't fast-forward: $BRANCH"
 	done
 
 	git for-each-ref refs/remotes/ --format='%(refname:short)' | grep -v HEAD | while read REMOTE
 	do
-		git merge --ff-only $REMOTE || echo "Not fast-forwarding: $REMOTE"
+		git merge --ff-only $REMOTE || echo "Can't fast-forward: $REMOTE"
 	done
 }
 
@@ -314,6 +318,7 @@ then
 	then
 		echo "Noticed & pulling down remote changes, killing zim..."
 		kill_zim
+		fast_forward_where_possible
 		send_ack
 	else
 		echo "Nothing broken to report or take action on; let zim be..."
