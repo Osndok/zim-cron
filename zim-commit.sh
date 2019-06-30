@@ -13,20 +13,30 @@
 #
 
 # Longest common prefix (optional, but makes for even nicer commit messages)
-LCP=/usr/local/bin/lcp
+LCP=$HOME/bin/lcp
+test -e "$LCP" || LCP=$HOME/.local/bin/lcp
+test -e "$LCP" || LCP=/usr/local/bin/lcp
+test -e "$LCP" || LCP=/usr/bin/lcp
 
 NOTEBOOKS=$HOME/Notebooks
 
 test -d $NOTEBOOKS || exit 1
 
-which online 2>/dev/null 1>&2 || alias online=true
+if ! which online 2>/dev/null 1>&2
+then
+	function online()
+	{
+		echo "online script not found, so assuming network connection is up"
+		return 0;
+	}
+fi
 
 # Called if/when stuff really gets messed up, and you need to know about it.
 # You will probably have to replace this with something else.
 function panic()
 {
 	local MESSAGE="$1"
-	$HOME/bin/once-daily $HOME/bin/pom-objective "$MESSAGE"
+	once-daily pom-objective "$MESSAGE"
 }
 
 for NOTEBOOK in $NOTEBOOKS/*

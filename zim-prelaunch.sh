@@ -18,6 +18,15 @@ rm -rf /tmp/zim-$USER &
 # Longest common prefix (optional, but makes for even nicer commit messages)
 LCP=/usr/local/bin/lcp
 
+if ! which online 2>/dev/null 1>&2
+then
+	function online()
+	{
+		echo "online script not found, so assuming network connection is up"
+		return 0;
+	}
+fi
+
 NOTEBOOKS=$HOME/Notebooks
 
 test -d $NOTEBOOKS || exit 1
@@ -33,7 +42,7 @@ BRANCHES=$(git for-each-ref refs/ --format='%(refname:short)' | egrep -v "(HEAD|
 
 MSG="$(hostname): pre-launch merge"
 
-git fetch --all || true
+online && git fetch --all || true
 
 # NB: We should only merge if there are NO UNCOMMITTED CHANGES!
 DIRTY="$(git status --porcelain)"
