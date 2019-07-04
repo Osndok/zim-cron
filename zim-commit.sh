@@ -296,6 +296,24 @@ function fast_forward_where_possible()
 	done
 }
 
+function fast_forward_master_branch()
+{
+	local BRANCH=master
+	local CURRENT_BRANCH="$HOSTNAME"
+	local THIS=$(git rev-parse $BRANCH) || true
+	local MINE=$(git rev-parse $CURRENT_BRANCH)
+
+	if [ "$THIS" == "$BRANCH" ]
+	then
+		echo "$BRANCH does not exist"
+		git update-ref refs/heads/$BRANCH "$MINE"
+	elif git merge-base --is-ancestor $THIS $MINE
+	then
+		echo "$BRANCH is older than $CURRENT_BRANCH"
+		git update-ref refs/heads/$BRANCH "$MINE" "$THIS"
+	fi
+}
+
 # There are parallel branch names EVERYWHERE... so if ever we update our local branch, it can
 # help to speed things along by sending an 'ack'... which just shifts the remote side's perception
 # of where this side's branch tracking is... in practice, this is just another PUSH, but with no data.
@@ -329,9 +347,12 @@ then
 		echo "Noticed & pulling down remote changes, killing zim..."
 		kill_zim
 		fast_forward_where_possible
+		fast_forward_master_branch
 		send_ack
 	else
 		echo "Nothing broken to report or take action on; let zim be..."
+		fast_forward_master_branch
+		send_ack
 	fi
 else
 	echo "zim is *NOT* running"
