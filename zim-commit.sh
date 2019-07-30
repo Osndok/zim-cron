@@ -39,12 +39,27 @@ function panic()
 	once-daily pom-objective "$MESSAGE"
 }
 
+# TODO: move this below the function definitions.
 for NOTEBOOK in $NOTEBOOKS/*
 do
 
 cd $NOTEBOOK
 
 test -d .git || git init
+
+LOCK=.git/autocommit.pid
+
+if [ -e "$LOCK" ]
+then
+	PID=$(cat $LOCK)
+	if [ -e "/proc/$PID" ]
+	then
+		echo "error? pid-$PID is still running"
+		continue
+	fi
+fi
+
+echo "$$" > $LOCK
 
 echo "NOTEBOOK=$(basename $NOTEBOOK)"
 
