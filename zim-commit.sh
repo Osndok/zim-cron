@@ -54,8 +54,15 @@ then
 	PID=$(cat $LOCK)
 	if [ -e "/proc/$PID" ]
 	then
-		echo "error? pid-$PID is still running"
-		continue
+		if grep zim "/proc/$PID/cmdline"
+		then
+			echo "error? pid-$PID is still running"
+			continue
+		else
+			echo "PID=$PID is not self?"
+			cat "/proc/$PID/cmdline"
+			ps auxw | grep "$PID"
+		fi
 	fi
 fi
 
