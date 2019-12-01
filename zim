@@ -15,8 +15,21 @@ PRELAUNCH=$MYDIR/zim-prelaunch.sh
 LOG="$HOME/.local/zim.calls"
 
 # Unusual, but soft, dependencies...
-which gxmessage   2> /dev/null || alias gxmessage=echo
-which pom-notable 2> /dev/null || alias pom-notable=echo
+if ! which gxmessage 2> /dev/null
+then
+	function gxmessage()
+	{
+		echo "$*"
+	}
+fi
+
+if ! which pom-notable 2> /dev/null
+then
+	function pom-notable()
+	{
+		echo "NB: $*"
+	}
+fi
 
 # BEFORE WE DO ANYTHING... in case we... or zim... or python... or the distro... or the kernel
 # MESS SOMETHING UP, let us make sure we AT LEAST preserve WHAT WAS GOING TO BE LOGGED into zim!
