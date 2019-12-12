@@ -36,6 +36,11 @@ do
 
 cd $NOTEBOOK
 
+if [ -e .git/index.lock ] && [ -z "$(pgrep git)" ]
+then
+	rm -fv .git/index.lock
+fi
+
 CURRENT_BRANCH=$(basename $(git symbolic-ref HEAD))
 
 BRANCHES=$(git for-each-ref refs/ --format='%(refname:short)' | egrep -v "(HEAD|$CURRENT_BRANCH)") || echo "no branches?"
