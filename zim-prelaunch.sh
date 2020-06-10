@@ -43,7 +43,7 @@ fi
 
 CURRENT_BRANCH=$(basename $(git symbolic-ref HEAD))
 
-BRANCHES=$(git for-each-ref refs/ --format='%(refname:short)' | egrep -v "(HEAD|$CURRENT_BRANCH)") || echo "no branches?"
+BRANCHES=$(git for-each-ref refs/ --format='%(refname:short)' | egrep -v "(stash|HEAD|$CURRENT_BRANCH)") || echo "no branches?"
 
 MSG="$(hostname): pre-launch merge"
 
