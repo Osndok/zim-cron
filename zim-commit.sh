@@ -165,7 +165,8 @@ function send_changes()
 {
 	git remote | while read UPSTREAM
 	do
-		git push -f $UPSTREAM || echo "Unable to push authoritative changes to $UPSTREAM"
+		git push --all "$UPSTREAM" || echo "Upstream push failed"
+		git push -f "$UPSTREAM" "$HOSTNAME":"$HOSTNAME" || echo "Unable to push authoritative changes to $UPSTREAM"
 	done
 }
 
