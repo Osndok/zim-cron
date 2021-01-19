@@ -110,7 +110,7 @@ then
 		fi
 
 		# 'Journal' (by itself) is a bit uninteresting... unless it is the only thing changed!
-		if [ "$MESSAGE" != "Journal," ]
+		if [ "$MESSAGE" != "Journal," ] && [ "$MESSAGE" != ",Journal," ]
 		then
 			# Limit the message length to 512 characters
 			MESSAGE=$(echo "$MESSAGE" | cut -c-512 | sed -E 's/,Journal|Journal,//g')
