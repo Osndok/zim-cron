@@ -141,20 +141,20 @@ else
 	do
 		debug "non-gui zim call without a socket waiting for zim to activate"
 
-		sleep 60
+		sleep 20
 		let TIMES=TIMES+1
-
-		if [ "$TIMES" -gt "10" ]
-		then
-			warning "waited too long for zim to come alive"
-			break
-		fi
 
 		if zim_is_running
 		then
 			SOCKET=$(find /tmp/zim-$USER -type s)
 		else
 			warning "non-gui zim call without main zim process present"
+			break
+		fi
+
+		if [ "$TIMES" -gt "3" ]
+		then
+			warning "waited too long for zim to come alive"
 			break
 		fi
 	done
