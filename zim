@@ -31,6 +31,51 @@ then
 	}
 fi
 
+# ------------------------------------------------------
+
+LOCK="/tmp/zim-${USER}.lock"
+LOCK_DEADLINE=$(date +%s --date="+5minutes")
+read BOOT_ID < /proc/sys/kernel/random/boot_id
+
+function _unlock()
+{
+	rm -rfv "$LOCK"
+}
+
+function _maybe_force_lock()
+{
+	NOW=$(date +%s)
+	read LOCK_PID  < "$LOCK/pid"
+	read LOCK_WHEN < "$LOCK/when"
+	read LOCK_BOOT < "$LOCK/boot_id"
+
+	if [ "$LOCK_BOOT" != "$BOOT_ID" ]
+	then
+		echo 1>&2 "forcing lock; boot-id mismatch"
+		_unlock
+	elif [ "$NOW" -gt "$LOCK_DEADLINE" ]
+	then
+		echo 1>&2 "forcing lock; stale"
+		_unlock
+	fi
+}
+
+function _lock()
+{
+	while ! mkdir "$LOCK"
+	do
+		SECONDS="$((1 + RANDOM % 5)).$((RANDOM % 1000))"
+		sleep "$SECONDS"
+		_maybe_force_lock
+	done
+	echo "$$" > "$LOCK/pid"
+	date +%s > "$LOCK/when"
+	echo "$BOOT_ID" > "$LOCK/boot_id"
+}
+_lock
+
+# ------------------------------------------------------
+
 # BEFORE WE DO ANYTHING... in case we... or zim... or python... or the distro... or the kernel
 # MESS SOMETHING UP, let us make sure we AT LEAST preserve WHAT WAS GOING TO BE LOGGED into zim!
 echo -e "$(date +%s)\tzim $*" >> $LOG
@@ -194,6 +239,8 @@ then
 			# It is expected that the user will manually restart zim.
 		fi
 	fi
+
+	_unlock
 else
 	debug "gui launch requested"
 	sleep 1
@@ -207,6 +254,10 @@ else
 		pgrep -f 'zim.py --debug' | xargs kill -9 || echo "could not kill -9 zim development server?"
 		pgrep -f 'zim --debug' | xargs kill -9 || echo "could not kill -9 zim stock server?"
 	fi
+
+	# !!!: NB: What we are trying to do here is "UNLOCK" other zim calls only after the main zim process is ready to recieve
+	# RPC calls (b/c a long zim start time can cause those to time out).
+	( sleep 120 && _unlock ) &
 
 	if [ -d "$LOCAL" ]
 	then
