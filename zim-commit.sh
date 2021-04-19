@@ -56,7 +56,7 @@ then
 	then
 		if grep zim "/proc/$PID/cmdline"
 		then
-			echo "error? pid-$PID is still running"
+			echo "ERROR: $LOCK indicates notebook is locked, as pid-$PID is still running"
 			continue
 		else
 			echo "PID=$PID is not self?"
