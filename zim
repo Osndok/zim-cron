@@ -64,8 +64,8 @@ function _lock()
 {
 	while ! mkdir "$LOCK"
 	do
-		SECONDS="$((1 + RANDOM % 5)).$((RANDOM % 1000))"
-		sleep "$SECONDS"
+		SLEEP_SECONDS="$((1 + RANDOM % 5)).$((RANDOM % 1000))"
+		sleep "$SLEEP_SECONDS"
 		_maybe_force_lock
 	done
 	echo "$$" > "$LOCK/pid"
