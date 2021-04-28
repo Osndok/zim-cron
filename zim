@@ -117,8 +117,9 @@ function start_sidekick()
 	if [ -n "$SIDEKICK" ]
 	then
 		# Should it have it's own log?
-		( cd / ; "$SIDEKICK" >> $LOG 2>&1 ) &
+		( cd / ; exec "$SIDEKICK" >> $LOG 2>&1 ) &
 		SIDEKICK_PID="$!"
+		debug sidekick pid "$SIDEKICK_PID"
 	else
 		debug "sidekick not found"
 	fi
@@ -127,10 +128,15 @@ function start_sidekick()
 function stop_sidekick()
 {
 	debug stop_sidekick
-	#local PID="${SIDEKICK_PID:-}"
-	#test -z "$PID" || kill "$PID"
-	#killall zim-sidekick-loop
-	pkill -f zim-sidekick-loop
+	local PID="${SIDEKICK_PID:-}"
+
+	if [ -d /proc/$PID ]
+	then
+		kill "$PID"
+	else
+		debug "sidekick might have forked, pid $PID not found..."
+		pkill -f zim-sidekick-loop
+	fi
 }
 
 #set -vx
