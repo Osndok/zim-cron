@@ -161,38 +161,7 @@ function any_other_branch_is_newer_or_divergent()
 	return 1
 }
 
-function send_changes()
-{
-	git remote | while read UPSTREAM
-	do
-		git push --all "$UPSTREAM" || echo "Upstream push failed"
-		git push -f "$UPSTREAM" "$HOSTNAME":"$HOSTNAME" || echo "Unable to push authoritative changes to $UPSTREAM"
-	done
-}
-
-function send_local_changes()
-{
-	local HERE=$(git rev-parse "$HOSTNAME")
-	local THERE;
-
-	if [ "$HERE" == "$HOSTNAME" ]
-	then
-		echo 1>&2 "recovering from possibly-incorrect local branch checkout"
-		git checkout -b "$HOSTNAME" || git checkout "$HOSTNAME"
-		HERE=$(git rev-parse "$HOSTNAME")
-	fi
-
-	git remote | while read UPSTREAM
-	do
-		THERE=$(git rev-parse "remotes/$UPSTREAM/$HOSTNAME")
-		if [ "$HERE" != "$THERE" ]
-		then
-			git push -f $UPSTREAM $HOSTNAME:$HOSTNAME || echo "Unable to push authoritative local changes to $UPSTREAM"
-		fi
-	done
-}
-
-function maybe_commit_and_send_changes()
+function maybe_commit_changes()
 {
 	if ! git add -A .
 	then
@@ -271,11 +240,6 @@ function maybe_commit_and_send_changes()
 		fi
 
 		git commit -m"${MESSAGE%?}"
-
-		time send_changes
-	else
-		# MAYBE... we created one or more commits, but the connection was not available (at the time)?
-		send_local_changes
 	fi
 }
 
@@ -337,13 +301,6 @@ function fast_forward_master_branch()
 	fi
 }
 
-# There are parallel branch names EVERYWHERE... so if ever we update our local branch, it can
-# help to speed things along by sending an 'ack'... which just shifts the remote side's perception
-# of where this side's branch tracking is... in practice, this is just another PUSH, but with no data.
-function send_ack()
-{
-	maybe_commit_and_send_changes
-}
 
 # ------------------------------------------------------------------------------
 
@@ -357,25 +314,22 @@ then
 
 	# If we are "running *THE* process", then we do *NOT* delay our execution.
 	# That way, we will form a commit sooner, so that the other scripts can "pass it around"
-	maybe_commit_and_send_changes
+	maybe_commit_changes
 
 	if any_other_branch_is_newer_or_divergent
 	then
 		echo "At least one incoming branch was updated, killing zim..."
 		kill_zim
 		fast_forward_where_possible
-		send_ack
 	elif fetched_something_new
 	then
 		echo "Noticed & pulling down remote changes, killing zim..."
 		kill_zim
 		fast_forward_where_possible
 		fast_forward_master_branch
-		send_ack
 	else
 		echo "Nothing broken to report or take action on; let zim be..."
 		fast_forward_master_branch
-		send_ack
 	fi
 else
 	echo "zim is *NOT* running"
@@ -390,13 +344,12 @@ else
 	# TODO: we could also choose not to delay our execution if we find our local repo has changes
 	# Why so high? It is critical to out-wait the originator, or else we will be up to two full period behind (two hours)
 	tty || sleep 33
-	maybe_commit_and_send_changes
+	maybe_commit_changes
 
 	if fetched_something_new
 	then
 		echo "Remote changes detected"
 		fast_forward_where_possible
-		send_ack
 	fi
 fi
 
