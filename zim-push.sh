@@ -163,7 +163,7 @@ function send_local_changes()
 	if [ "$HERE" == "$HOSTNAME" ]
 	then
 		echo 1>&2 "recovering from possibly-incorrect local branch checkout"
-		git checkout -b "$HOSTNAME" || git checkout "$HOSTNAME"
+		git checkout -b "$HOSTNAME" || git switch "$HOSTNAME"
 		HERE=$(git rev-parse "$HOSTNAME")
 	fi
 
