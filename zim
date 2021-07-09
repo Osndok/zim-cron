@@ -297,6 +297,8 @@ else
 	then
 		pom-notable "zim: gui launch returned but socket lingers?"
 	fi
+
+	sync
 fi
 
 
