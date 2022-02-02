@@ -45,6 +45,12 @@ function _unlock()
 function _maybe_force_lock()
 {
 	NOW=$(date +%s)
+	
+	if ! [ -d "$LOCK" ]
+	then
+		return
+	fi
+	
 	read LOCK_PID  < "$LOCK/pid"
 	read LOCK_WHEN < "$LOCK/when"
 	read LOCK_BOOT < "$LOCK/boot_id"
