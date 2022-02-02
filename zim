@@ -58,6 +58,7 @@ function _maybe_force_lock()
 		echo 1>&2 "forcing lock; stale"
 		_unlock
 	elif ! grep zim /proc/$LOCK_PID/cmdline
+	then
 		echo 1>&2 "forcing lock; bad pid"
 		_unlock
 	fi
