@@ -199,7 +199,7 @@ fi
 #if [ -n "$SOCKET" ]
 if [ -z "$GUI_LAUNCH" ]
 then
-	debug "non-gui launch"
+	#debug "non-gui launch"
 
 	# Make sure we don't lose the socket
 	if [ -d "$LOCAL" ]
