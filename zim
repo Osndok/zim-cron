@@ -15,7 +15,7 @@ PRELAUNCH=$MYDIR/zim-prelaunch.sh
 LOG="$HOME/.local/zim.calls"
 
 # Unusual, but soft, dependencies...
-if ! which gxmessage 2> /dev/null
+if ! which gxmessage > /dev/null 2> /dev/null
 then
 	function gxmessage()
 	{
@@ -23,7 +23,7 @@ then
 	}
 fi
 
-if ! which pom-notable 2> /dev/null
+if ! which pom-notable > /dev/null 2> /dev/null
 then
 	function pom-notable()
 	{
@@ -39,7 +39,7 @@ read BOOT_ID < /proc/sys/kernel/random/boot_id
 
 function _unlock()
 {
-	rm -rfv "$LOCK"
+	rm -rf "$LOCK"
 }
 
 function _maybe_force_lock()
